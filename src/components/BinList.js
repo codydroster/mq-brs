@@ -69,6 +69,9 @@ export default function BinList({ category, selectedSubcategory, onBinsChanged }
   // WebSocket connection is category-agnostic — connect once at mount
   useEffect(() => {
     const ws = new WebSocket(WS_URL);
+    ws.onopen = () => console.log('[WS] connected to backend');
+    ws.onerror = (e) => console.error('[WS] connection error', e);
+    ws.onclose = () => console.warn('[WS] disconnected');
     ws.onmessage = (event) => {
       try {
         const { barcode, status, request, store } = JSON.parse(event.data);
@@ -77,7 +80,7 @@ export default function BinList({ category, selectedSubcategory, onBinsChanged }
             ? { ...bin, ...(status && { status }), ...(request && { request }), ...(store && { store }) }
             : bin
         ));
-      } catch (e) { console.error('WS error', e); }
+      } catch (e) { console.error('[WS] message parse error', e); }
     };
     clientRef.current = ws;
     return () => ws.close();
@@ -90,7 +93,11 @@ export default function BinList({ category, selectedSubcategory, onBinsChanged }
     if (!window.confirm(newRequest === 'yes' ? 'Request Bin?' : 'Cancel Request?')) return;
     const ws = clientRef.current;
     if (ws?.readyState === WebSocket.OPEN) {
-      ws.send(JSON.stringify({ topic: 'bins/status/request', payload: { barcode, request: newRequest } }));
+      const msg = JSON.stringify({ topic: 'bins/command', payload: { barcode, type: 'request', request: newRequest } });
+      console.log('[WS] sending', msg);
+      ws.send(msg);
+    } else {
+      console.error('[WS] not open, readyState:', ws?.readyState);
     }
   };
 

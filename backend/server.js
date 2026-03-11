@@ -87,9 +87,11 @@ function broadcast(data) {
 setBroadcast(broadcast);
 
 wss.on('connection', (ws) => {
+  console.log('WS client connected');
   ws.on('message', (raw) => {
     try {
       const { topic, payload } = JSON.parse(raw);
+      console.log(`WS → MQTT: ${topic}`, payload);
       if (typeof topic === 'string' && payload) {
         mqttClient.publish(topic, JSON.stringify(payload));
       }
@@ -97,6 +99,7 @@ wss.on('connection', (ws) => {
       console.error('WS message parse error:', e);
     }
   });
+  ws.on('close', () => console.log('WS client disconnected'));
 });
 
 server.listen(PORT, () => {

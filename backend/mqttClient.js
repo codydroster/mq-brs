@@ -18,17 +18,17 @@ const BINS_DIR = path.join(__dirname, 'bins');
 
 client.on('connect', () => {
   console.log('✅ Connected to MQTT broker');
-  client.subscribe('bins/status/update', err => {
+  client.subscribe('bins/update', err => {
     if (err) {
       console.error('❌ Failed to subscribe:', err);
     } else {
-      console.log('📡 Subscribed to bins/status/update');
+      console.log('📡 Subscribed to bins/update');
     }
   });
 });
 
 client.on('message', (topic, message) => {
-  if (topic === 'bins/status/update') {
+  if (topic === 'bins/update') {
     try {
       const payload = JSON.parse(message.toString());
       const { barcode, status, request, store } = payload;
