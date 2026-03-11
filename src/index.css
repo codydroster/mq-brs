@@ -1,0 +1,40 @@
+* {
+  box-sizing: border-box;
+}
+
+body {
+  margin: 0;
+  font-family: Arial, Helvetica, sans-serif;
+  font-size: 13px;
+  color: #1a1a1a;
+  background: #ffffff;
+  -webkit-font-smoothing: antialiased;
+}
+
+code {
+  font-family: 'Courier New', Courier, monospace;
+}
+
+button {
+  font-family: Arial, Helvetica, sans-serif;
+}
+
+@keyframes flashRed {
+  0%   { border-color: #cc0000; }
+  50%  { border-color: transparent; }
+  100% { border-color: #cc0000; }
+}
+
+@keyframes flashGreen {
+  0%   { border-color: #2e7d32; }
+  50%  { border-color: transparent; }
+  100% { border-color: #2e7d32; }
+}
+
+.flash-red {
+  animation: flashRed 1s infinite;
+}
+
+.flash-green {
+  animation: flashGreen 1s infinite;
+}

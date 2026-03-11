@@ -1,0 +1,35 @@
+.app-shell {
+  display: flex;
+  flex-direction: column;
+  height: 100vh;
+  overflow: hidden;
+}
+
+.app-topbar {
+  background-color: #003087;
+  color: #ffffff;
+  padding: 0 20px;
+  height: 44px;
+  display: flex;
+  align-items: center;
+  flex-shrink: 0;
+  border-bottom: 2px solid #cc0000;
+}
+
+.app-topbar h1 {
+  margin: 0;
+  font-size: 18px;
+  font-weight: 700;
+  letter-spacing: 0.5px;
+  font-family: Arial, Helvetica, sans-serif;
+}
+
+.app-topbar span {
+  color: #cc0000;
+}
+
+.app-body {
+  display: flex;
+  flex: 1;
+  overflow: hidden;
+}
