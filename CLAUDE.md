@@ -2,6 +2,10 @@
 
 This file provides guidance to Claude Code (claude.ai/code) when working with code in this repository.
 
+## Project purpose
+
+This is a bin sorting system for a physical warehouse/storage facility. The website interfaces with an autonomous vehicle that physically stores and retrieves bins. MQTT is the primary communication protocol between the web app and the vehicle — commands like store and retrieve are sent over MQTT topics, and the vehicle publishes status updates back.
+
 ## Commands
 
 Two separate processes must run concurrently during development:

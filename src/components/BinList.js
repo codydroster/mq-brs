@@ -1,5 +1,4 @@
 import { useEffect, useState, useRef } from 'react';
-import mqtt from 'mqtt';
 import Icon from '@mdi/react';
 import {
   mdiPlus,
@@ -10,7 +9,7 @@ import {
 } from '@mdi/js';
 import { DragDropContext, Droppable, Draggable } from '@hello-pangea/dnd';
 import Modal from './Modal';
-import { BASE_URL, MQTT_URL } from '../config';
+import { BASE_URL, WS_URL } from '../config';
 
 function getBinBorderColor(bin) {
   if (bin.store === 'yes') return '#2e7d32';
@@ -67,22 +66,21 @@ export default function BinList({ category, selectedSubcategory, onBinsChanged }
       .then(setBins);
   }, [category]);
 
-  // MQTT connection is category-agnostic — connect once at mount
+  // WebSocket connection is category-agnostic — connect once at mount
   useEffect(() => {
-    const client = mqtt.connect(MQTT_URL, { username: 'cdroster', password: 'kka-zutGap' });
-    client.on('connect', () => client.subscribe('bins/status/update'));
-    client.on('message', (_, message) => {
+    const ws = new WebSocket(WS_URL);
+    ws.onmessage = (event) => {
       try {
-        const { barcode, status, request, store } = JSON.parse(message.toString());
+        const { barcode, status, request, store } = JSON.parse(event.data);
         setBins(prev => prev.map(bin =>
           bin.barcode === barcode
             ? { ...bin, ...(status && { status }), ...(request && { request }), ...(store && { store }) }
             : bin
         ));
-      } catch (e) { console.error('MQTT error', e); }
-    });
-    clientRef.current = client;
-    return () => client.end();
+      } catch (e) { console.error('WS error', e); }
+    };
+    clientRef.current = ws;
+    return () => ws.close();
   }, []);
 
   const handleBinClick = (barcode) => {
@@ -90,7 +88,10 @@ export default function BinList({ category, selectedSubcategory, onBinsChanged }
     if (!bin) return;
     const newRequest = bin.request === 'yes' ? 'no' : 'yes';
     if (!window.confirm(newRequest === 'yes' ? 'Request Bin?' : 'Cancel Request?')) return;
-    clientRef.current?.publish('bins/status/request', JSON.stringify({ barcode, request: newRequest }));
+    const ws = clientRef.current;
+    if (ws?.readyState === WebSocket.OPEN) {
+      ws.send(JSON.stringify({ topic: 'bins/status/request', payload: { barcode, request: newRequest } }));
+    }
   };
 
   const handleDragEnd = async ({ source, destination, draggableId }) => {

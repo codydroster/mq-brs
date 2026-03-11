@@ -1,8 +1,10 @@
+const http = require('http');
 const express = require('express');
 const cors = require('cors');
 const fs = require('fs');
 const path = require('path');
-require('./mqttClient');
+const WebSocket = require('ws');
+const { client: mqttClient, setBroadcast } = require('./mqttClient');
 
 const app = express();
 const PORT = 3001;
@@ -71,6 +73,32 @@ app.put('/category/:name', (req, res) => {
   res.json({ success: true });
 });
 
-app.listen(PORT, () => {
+// WebSocket server (shares port with Express)
+const server = http.createServer(app);
+const wss = new WebSocket.Server({ server });
+
+function broadcast(data) {
+  const msg = JSON.stringify(data);
+  for (const ws of wss.clients) {
+    if (ws.readyState === WebSocket.OPEN) ws.send(msg);
+  }
+}
+
+setBroadcast(broadcast);
+
+wss.on('connection', (ws) => {
+  ws.on('message', (raw) => {
+    try {
+      const { topic, payload } = JSON.parse(raw);
+      if (typeof topic === 'string' && payload) {
+        mqttClient.publish(topic, JSON.stringify(payload));
+      }
+    } catch (e) {
+      console.error('WS message parse error:', e);
+    }
+  });
+});
+
+server.listen(PORT, () => {
   console.log(`Server running on http://localhost:${PORT}`);
 });

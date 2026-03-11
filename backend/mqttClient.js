@@ -1,13 +1,17 @@
+require('dotenv').config();
 const mqtt = require('mqtt');
 const fs = require('fs');
 const path = require('path');
 
 // MQTT connection config
-const client = mqtt.connect('mqtt://192.168.1.118', {
-  port: 1883,
-  username: 'cdroster',
-  password: 'kka-zutGap',
+const client = mqtt.connect(process.env.MQTT_BROKER, {
+  port: Number(process.env.MQTT_PORT),
+  username: process.env.MQTT_USERNAME,
+  password: process.env.MQTT_PASSWORD,
 });
+
+let broadcast = () => {};
+function setBroadcast(fn) { broadcast = fn; }
 
 // Path to bin category files
 const BINS_DIR = path.join(__dirname, 'bins');
@@ -38,11 +42,13 @@ client.on('message', (topic, message) => {
       const validRequest = ['yes', 'no'].includes(request);
       const validStore = ['yes', 'no'].includes(store);
 
-      updateBinFields(barcode.trim(), {
+      const fields = {
         ...(validStatus ? { status } : {}),
         ...(validRequest ? { request } : {}),
         ...(validStore ? { store } : {})
-      });
+      };
+      updateBinFields(barcode.trim(), fields);
+      broadcast({ barcode, ...fields });
     } catch (err) {
       console.error('❌ MQTT message parse error:', err);
     }
@@ -107,3 +113,5 @@ function updateBinFields(barcode, fieldsToUpdate) {
 
   console.warn(`⚠️ Barcode "${barcode}" not found in any category file.`);
 }
+
+module.exports = { client, setBroadcast };
