@@ -8,6 +8,7 @@ function App() {
   const [categories, setCategories] = useState([]);
   const [selectedCategory, setSelectedCategory] = useState(null);
   const [selectedSubcategory, setSelectedSubcategory] = useState(null);
+  const [selectedParent, setSelectedParent] = useState(null); // { name, categories }
   const sidebarRef = useRef();
 
   const loadCategories = useCallback(() => {
@@ -20,12 +21,23 @@ function App() {
   useEffect(() => { loadCategories(); }, [loadCategories]);
 
   useEffect(() => {
-    if (categories.length && !selectedCategory) {
+    if (categories.length && !selectedCategory && !selectedParent) {
       setSelectedCategory(categories[0]);
     }
-  }, [categories, selectedCategory]);
+  }, [categories, selectedCategory, selectedParent]);
 
   useEffect(() => { setSelectedSubcategory(null); }, [selectedCategory]);
+
+  const handleSelectCategory = (cat) => {
+    setSelectedCategory(cat);
+    setSelectedParent(null);
+  };
+
+  const handleSelectParent = (parentName, parentCategories) => {
+    setSelectedParent({ name: parentName, categories: parentCategories });
+    setSelectedCategory(null);
+    setSelectedSubcategory(null);
+  };
 
   const handleBinsChanged = useCallback(() => {
     loadCategories();
@@ -42,13 +54,17 @@ function App() {
           ref={sidebarRef}
           categories={categories}
           selectedCategory={selectedCategory}
-          onSelect={cat => setSelectedCategory(cat)}
+          selectedParent={selectedParent?.name}
+          onSelect={handleSelectCategory}
+          onSelectParent={handleSelectParent}
           reloadCategories={loadCategories}
           selectedSubcategory={selectedSubcategory}
           setSelectedSubcategory={setSelectedSubcategory}
         />
         <BinList
           category={selectedCategory}
+          categoryList={selectedParent?.categories}
+          parentName={selectedParent?.name}
           selectedSubcategory={selectedSubcategory?.subcat}
           onBinsChanged={handleBinsChanged}
         />

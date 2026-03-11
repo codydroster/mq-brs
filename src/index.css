@@ -20,21 +20,19 @@ button {
 }
 
 @keyframes flashRed {
-  0%   { border-color: #cc0000; }
-  50%  { border-color: transparent; }
-  100% { border-color: #cc0000; }
+  0%, 100% { opacity: 1; }
+  50%       { opacity: 0.35; }
 }
 
 @keyframes flashGreen {
-  0%   { border-color: #2e7d32; }
-  50%  { border-color: transparent; }
-  100% { border-color: #2e7d32; }
+  0%, 100% { opacity: 1; }
+  50%       { opacity: 0.35; }
 }
 
 .flash-red {
-  animation: flashRed 1s infinite;
+  animation: flashRed 0.8s ease-in-out infinite;
 }
 
 .flash-green {
-  animation: flashGreen 1s infinite;
+  animation: flashGreen 0.8s ease-in-out infinite;
 }

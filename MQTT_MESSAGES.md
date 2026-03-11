@@ -1,169 +1,144 @@
 # MQTT Message Structure & Flow
 
-## Overview
+## Architecture
 
-The system uses MQTT as the communication layer between the web app and physical hardware (vehicle, sensors, etc).
-The backend subscribes to the broker and relays updates to the browser via WebSocket — the browser never
-connects to MQTT directly.
+The browser never connects to the MQTT broker directly. The backend is the only MQTT client —
+it relays inbound messages to the browser via WebSocket, and forwards outbound browser messages
+to the broker.
 
 ```
-[Browser] <--WebSocket--> [Backend (port 3001)] <--MQTT--> [Broker (192.168.1.130:1883)]
-                                                                      |
-                                                              [Vehicle / Hardware]
+[Browser] <--WebSocket--> [Backend :3001] <--MQTT--> [Broker 192.168.1.130:1883]
+                                                              |
+                                                        [Vehicle]
 ```
 
 ---
 
-## Proposed Topic Structure
-
-Three topics total. Hardware only ever publishes inbound. The app only ever publishes outbound.
-No topic does double duty.
+## Topics
 
 ```
-bins/update      ← hardware → backend → browser   (hardware reports bin state)
-bins/command     → browser → backend → hardware   (app tells hardware what to do)
-vehicle/status   ← hardware → backend → browser   (vehicle reports its own state)
+bins/update      ← vehicle → backend → browser    vehicle reports bin state changes
+bins/command     → browser → backend → vehicle    app sends commands to the vehicle
+vehicle/status   ← vehicle → backend → browser    vehicle reports its own state  (planned)
 ```
 
 ---
 
 ## `bins/update`
-**Direction:** Hardware → Broker → Backend → Browser
-**Purpose:** Hardware reports the current state of a bin after any change.
+
+**Direction:** Vehicle → Broker → Backend → Browser
+
+Vehicle publishes this after completing a command or detecting any bin state change.
+Backend validates the fields, writes to disk, and broadcasts to all connected browsers.
 
 **Payload:**
 ```json
 {
-  "barcode": "ABC123",
-  "status": "out",
-  "request": "no",
-  "store": "no"
+  "barcode": "08",
+  "status": "out-pending"
 }
 ```
 
-**Field rules:**
 | Field | Values | Required |
 |---|---|---|
 | `barcode` | any string | yes |
-| `status` | `"in"` / `"out"` | no |
-| `request` | `"yes"` / `"no"` | no |
-| `store` | `"yes"` / `"no"` | no |
+| `status` | `"in"` / `"out"` / `"in-pending"` / `"out-pending"` | yes |
 
-Only fields present and valid are applied — missing fields are ignored.
-
-**Flow:**
-1. Hardware publishes to `bins/update` after acting on a command or detecting a state change
-2. Backend receives it, validates fields, updates the JSON file on disk
-3. Backend broadcasts the change over WebSocket to all connected browser clients
-4. Browser updates the bin card in local state (no page reload)
+| Status | Meaning |
+|---|---|
+| `in` | Bin is stored |
+| `out` | Bin has been retrieved |
+| `in-pending` | Vehicle is on its way to store the bin |
+| `out-pending` | Vehicle is on its way to retrieve the bin |
 
 ---
 
 ## `bins/command`
-**Direction:** Browser → Backend → Broker → Hardware
-**Purpose:** App tells hardware to perform an action on a bin. All bin commands go through
-this single topic — the `type` field distinguishes what to do.
+
+**Direction:** Browser → Backend → Broker → Vehicle
+
+All bin commands use this single topic. The `type` field tells the vehicle what to do.
+Barcode is the only identifier — the vehicle owns all location logic internally and
+decides where to store or find a bin. The webserver never sends or tracks locations.
 
 **Payload:**
 ```json
 {
-  "barcode": "ABC123",
-  "type": "request",
-  "location": "A3"
+  "barcode": "08",
+  "type": "retrieve"
 }
 ```
 
-**Field rules:**
 | Field | Values | Required |
 |---|---|---|
 | `barcode` | any string | yes |
-| `type` | `"request"` / `"store"` / `"retrieve"` | yes |
-| `location` | shelf/slot identifier | only for `"store"` |
+| `type` | `"retrieve"` / `"store"` | yes |
 
-**Command types:**
+| Type | Triggered by | Meaning |
+|---|---|---|
+| `retrieve` | User clicks a bin card | Tell the vehicle to bring this bin out |
+| `store` | UI store action | Tell the vehicle to put this bin away |
 
-| Type | Meaning |
-|---|---|
-| `request` | User is requesting a bin be retrieved |
-| `retrieve` | Explicitly tell the vehicle to retrieve a bin |
-| `store` | Tell the vehicle to store a bin at a location |
-
-**Flow:**
-1. User performs an action in the browser (click bin, press store, etc.)
-2. Browser sends over WebSocket: `{ "topic": "bins/command", "payload": { ... } }`
-3. Backend publishes the payload to MQTT topic `bins/command`
-4. Hardware receives it, acts, then confirms by publishing back on `bins/update`
-
-The browser never updates local state optimistically — it waits for hardware to confirm
-via `bins/update`. This ensures the UI always reflects reality.
+The browser never updates state optimistically. It sends the command and waits for the
+vehicle to confirm via `bins/update`.
 
 ---
 
-## `vehicle/status`
-**Direction:** Hardware → Broker → Backend → Browser
-**Purpose:** Vehicle reports its current state so the UI can show availability, current task, etc.
+## `vehicle/status` _(planned)_
+
+**Direction:** Vehicle → Broker → Backend → Browser
+
+Vehicle reports what it's currently doing so the UI can show an idle/busy indicator.
 
 **Payload:**
 ```json
 {
   "state": "busy",
   "task": "retrieve",
-  "barcode": "ABC123",
-  "location": "A3"
+  "barcode": "08"
 }
 ```
 
-**Field rules:**
 | Field | Values | Required |
 |---|---|---|
 | `state` | `"idle"` / `"busy"` / `"error"` | yes |
-| `task` | `"retrieve"` / `"store"` / `null` | no |
-| `barcode` | bin being acted on | no |
-| `location` | current or target location | no |
+| `task` | `"retrieve"` / `"store"` / `null` | only when busy |
+| `barcode` | bin being acted on | only when busy |
 
 ---
 
-## Message Lifecycle Example
+## Lifecycle Examples
 
-**User requests a bin:**
+**User retrieves a bin:**
 ```
-Browser clicks bin
-  → WS → backend → MQTT: bins/command { barcode, type: "request" }
-    → Vehicle receives command, queues retrieval
-      → Vehicle publishes: bins/update { barcode, status: "out", request: "yes" }
-        → Backend updates disk, broadcasts over WS
-          → Browser card updates to red/flashing
+User clicks bin card → confirms dialog
+  → WS → backend → MQTT: bins/command { barcode: "08", type: "retrieve" }
+    → Vehicle begins moving
+      → MQTT: bins/update { barcode: "08", status: "out-pending" }   ← card shows "Retrieving…" + red flash
+    → Vehicle picks up bin, arrives at pickup point
+      → MQTT: bins/update { barcode: "08", status: "out" }           ← card shows "Out" + red border
 ```
 
-**Vehicle finishes retrieving:**
+**Vehicle stores a bin:**
 ```
-Vehicle arrives at pickup
-  → MQTT: bins/update { barcode, status: "out", request: "no" }
-  → MQTT: vehicle/status { state: "idle", task: null }
-    → Backend broadcasts both over WS
-      → Browser updates bin card and vehicle indicator
+User triggers store via UI
+  → WS → backend → MQTT: bins/command { barcode: "08", type: "store" }
+    → Vehicle begins moving
+      → MQTT: bins/update { barcode: "08", status: "in-pending" }    ← card shows "Storing…" + green flash
+    → Vehicle places bin in slot (vehicle decides where)
+      → MQTT: bins/update { barcode: "08", status: "in" }            ← card shows "In Stock" + gray border
 ```
 
 ---
 
-## Current vs Proposed Topics
+## Bin Visual States
 
-| Current | Proposed | Change |
-|---|---|---|
-| `bins/status/update` | `bins/update` | renamed, hardware-only |
-| `bins/status/request` | `bins/command` | renamed, extended to cover store/retrieve |
-| _(none)_ | `vehicle/status` | new |
-
----
-
-## Bin Visual States (driven by `bins/update` data)
-
-| Border | Animation | Condition |
-|---|---|---|
-| Gray | none | in stock, no request |
-| Red | flash-red | out of stock |
-| Red | flash-red | in stock + request active |
-| Green | flash-green | store === "yes" |
+| Border | Animation | Label | Condition |
+|---|---|---|---|
+| Gray | none | In Stock | `status: "in"` |
+| Red | none | Out | `status: "out"` |
+| Red | flash-red | Retrieving… | `status: "out-pending"` |
+| Green | flash-green | Storing… | `status: "in-pending"` |
 
 ---
 
@@ -174,4 +149,4 @@ Vehicle arrives at pickup
 | Broker host | `192.168.1.130` |
 | MQTT port | `1883` (TCP, backend only) |
 | WebSocket port | `3001` (browser ↔ backend) |
-| Credentials | stored in `backend/.env` only |
+| Credentials | `backend/.env` only — never in browser |

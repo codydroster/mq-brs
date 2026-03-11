@@ -31,24 +31,21 @@ client.on('message', (topic, message) => {
   if (topic === 'bins/update') {
     try {
       const payload = JSON.parse(message.toString());
-      const { barcode, status, request, store } = payload;
+      const { barcode, status } = payload;
 
       if (typeof barcode !== 'string') {
         console.warn('⚠️ Invalid barcode format. Skipping update.');
         return;
       }
 
-      const validStatus = ['in', 'out'].includes(status);
-      const validRequest = ['yes', 'no'].includes(request);
-      const validStore = ['yes', 'no'].includes(store);
+      const validStatus = ['in', 'out', 'in-pending', 'out-pending'].includes(status);
+      if (!validStatus) {
+        console.warn(`⚠️ Invalid status "${status}". Skipping update.`);
+        return;
+      }
 
-      const fields = {
-        ...(validStatus ? { status } : {}),
-        ...(validRequest ? { request } : {}),
-        ...(validStore ? { store } : {})
-      };
-      updateBinFields(barcode.trim(), fields);
-      broadcast({ barcode, ...fields });
+      updateBinFields(barcode.trim(), { status });
+      broadcast({ barcode, status });
     } catch (err) {
       console.error('❌ MQTT message parse error:', err);
     }
@@ -61,8 +58,6 @@ function reorderFields(bin) {
     subcategory: bin.subcategory || '',
     barcode: bin.barcode || '',
     status: bin.status || 'in',
-    request: bin.request || 'no',
-    store: bin.store || 'no'
   };
 }
 

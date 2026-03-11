@@ -13,9 +13,14 @@ app.use(cors());
 app.use(express.json());
 
 const DATA_DIR = path.join(__dirname, 'bins');
+const PARENTS_FILE = path.join(__dirname, 'parents.json');
 
 function isValidName(name) {
   return typeof name === 'string' && /^[a-zA-Z0-9_-]+$/.test(name);
+}
+
+function isValidParentName(name) {
+  return typeof name === 'string' && name.trim().length > 0 && name.length <= 50;
 }
 
 function readCategory(filePath) {
@@ -25,6 +30,34 @@ function readCategory(filePath) {
     return null;
   }
 }
+
+function readParents() {
+  try {
+    return JSON.parse(fs.readFileSync(PARENTS_FILE, 'utf-8'));
+  } catch {
+    return {};
+  }
+}
+
+// Get parent assignments
+app.get('/parents', (req, res) => {
+  res.json(readParents());
+});
+
+// Set a category's parent
+app.post('/parents', (req, res) => {
+  const { category, parent } = req.body;
+  if (!isValidName(category)) return res.status(400).json({ error: 'Invalid category name' });
+  if (parent && !isValidParentName(parent)) return res.status(400).json({ error: 'Invalid parent name' });
+  const parents = readParents();
+  if (parent) {
+    parents[category] = parent.trim();
+  } else {
+    delete parents[category];
+  }
+  fs.writeFileSync(PARENTS_FILE, JSON.stringify(parents, null, 2));
+  res.json({ success: true });
+});
 
 // List all categories
 app.get('/categories', (req, res) => {
@@ -70,6 +103,58 @@ app.put('/category/:name', (req, res) => {
   if (!isValidName(req.params.name)) return res.status(400).json({ error: 'Invalid category name' });
   const filePath = path.join(DATA_DIR, `${req.params.name}.json`);
   fs.writeFileSync(filePath, JSON.stringify(req.body, null, 2));
+  res.json({ success: true });
+});
+
+// Rename category and/or update its parent
+app.patch('/category/:name', (req, res) => {
+  if (!isValidName(req.params.name)) return res.status(400).json({ error: 'Invalid category name' });
+  const { newName, parent } = req.body;
+  let currentName = req.params.name;
+
+  if (newName !== undefined) {
+    if (!isValidName(newName)) return res.status(400).json({ error: 'Invalid new name' });
+    const oldPath = path.join(DATA_DIR, `${currentName}.json`);
+    const newPath = path.join(DATA_DIR, `${newName}.json`);
+    if (fs.existsSync(newPath)) return res.status(409).json({ error: 'Category already exists' });
+    fs.renameSync(oldPath, newPath);
+    const parents = readParents();
+    if (parents[currentName] !== undefined) {
+      parents[newName] = parents[currentName];
+      delete parents[currentName];
+      fs.writeFileSync(PARENTS_FILE, JSON.stringify(parents, null, 2));
+    }
+    currentName = newName;
+  }
+
+  if (parent !== undefined) {
+    const parents = readParents();
+    if (parent) {
+      if (!isValidParentName(parent)) return res.status(400).json({ error: 'Invalid parent name' });
+      parents[currentName] = parent.trim();
+    } else {
+      delete parents[currentName];
+    }
+    fs.writeFileSync(PARENTS_FILE, JSON.stringify(parents, null, 2));
+  }
+
+  res.json({ success: true, name: currentName });
+});
+
+// Rename a subcategory across all bins in a category
+app.patch('/category/:name/subcategory', (req, res) => {
+  if (!isValidName(req.params.name)) return res.status(400).json({ error: 'Invalid category name' });
+  const { from, to } = req.body;
+  if (typeof from !== 'string' || typeof to !== 'string' || !to.trim()) {
+    return res.status(400).json({ error: 'Invalid subcategory names' });
+  }
+  const filePath = path.join(DATA_DIR, `${req.params.name}.json`);
+  const bins = readCategory(filePath);
+  if (bins === null) return res.status(404).json({ error: 'Category not found' });
+  const updated = bins.map(bin =>
+    (bin.subcategory || 'Uncategorized') === from ? { ...bin, subcategory: to.trim() } : bin
+  );
+  fs.writeFileSync(filePath, JSON.stringify(updated, null, 2));
   res.json({ success: true });
 });
 

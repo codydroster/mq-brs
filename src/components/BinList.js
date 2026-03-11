@@ -12,15 +12,15 @@ import Modal from './Modal';
 import { BASE_URL, WS_URL } from '../config';
 
 function getBinBorderColor(bin) {
-  if (bin.store === 'yes') return '#2e7d32';
-  if (bin.status === 'in' && bin.request === 'yes') return '#cc0000';
   if (bin.status === 'out') return '#cc0000';
+  if (bin.status === 'out-pending') return '#cc0000';
+  if (bin.status === 'in-pending') return '#2e7d32';
   return '#c8c8c8';
 }
 
 function getBinAnimationClass(bin) {
-  if (bin.store === 'yes') return 'flash-green';
-  if (bin.status === 'in' && bin.request === 'yes') return 'flash-red';
+  if (bin.status === 'out-pending') return 'flash-red';
+  if (bin.status === 'in-pending') return 'flash-green';
   return '';
 }
 
@@ -52,19 +52,28 @@ const inputStyle = {
   outline: 'none',
 };
 
-export default function BinList({ category, selectedSubcategory, onBinsChanged }) {
+export default function BinList({ category, categoryList, parentName, selectedSubcategory, onBinsChanged }) {
   const [bins, setBins] = useState([]);
   const [showForm, setShowForm] = useState(false);
   const [editIndex, setEditIndex] = useState(null);
   const [newBin, setNewBin] = useState({ name: '', barcode: '', status: 'in', subcategory: '', request: 'no' });
   const clientRef = useRef(null);
 
+  // Single category
   useEffect(() => {
     if (!category) return;
     fetch(`${BASE_URL}/category/${category}`)
       .then(res => res.json())
       .then(setBins);
   }, [category]);
+
+  // Parent group — fetch all categories and merge
+  useEffect(() => {
+    if (!categoryList?.length) return;
+    Promise.all(categoryList.map(cat =>
+      fetch(`${BASE_URL}/category/${cat}`).then(res => res.json()).catch(() => [])
+    )).then(results => setBins(results.flat()));
+  }, [categoryList]);
 
   // WebSocket connection is category-agnostic — connect once at mount
   useEffect(() => {
@@ -74,11 +83,9 @@ export default function BinList({ category, selectedSubcategory, onBinsChanged }
     ws.onclose = () => console.warn('[WS] disconnected');
     ws.onmessage = (event) => {
       try {
-        const { barcode, status, request, store } = JSON.parse(event.data);
+        const { barcode, status } = JSON.parse(event.data);
         setBins(prev => prev.map(bin =>
-          bin.barcode === barcode
-            ? { ...bin, ...(status && { status }), ...(request && { request }), ...(store && { store }) }
-            : bin
+          bin.barcode === barcode ? { ...bin, status } : bin
         ));
       } catch (e) { console.error('[WS] message parse error', e); }
     };
@@ -87,15 +94,13 @@ export default function BinList({ category, selectedSubcategory, onBinsChanged }
   }, []);
 
   const handleBinClick = (barcode) => {
-    const bin = bins.find(b => b.barcode === barcode);
-    if (!bin) return;
-    const newRequest = bin.request === 'yes' ? 'no' : 'yes';
-    if (!window.confirm(newRequest === 'yes' ? 'Request Bin?' : 'Cancel Request?')) return;
+    if (!window.confirm('Retrieve bin?')) return;
     const ws = clientRef.current;
     if (ws?.readyState === WebSocket.OPEN) {
-      const msg = JSON.stringify({ topic: 'bins/command', payload: { barcode, type: 'request', request: newRequest } });
+      const msg = JSON.stringify({ topic: 'bins/command', payload: { barcode, type: 'retrieve' } });
       console.log('[WS] sending', msg);
       ws.send(msg);
+      setBins(prev => prev.map(bin => bin.barcode === barcode ? { ...bin, status: 'out-pending' } : bin));
     } else {
       console.error('[WS] not open, readyState:', ws?.readyState);
     }
@@ -170,10 +175,10 @@ export default function BinList({ category, selectedSubcategory, onBinsChanged }
         backgroundColor: '#f4f4f4',
       }}>
         <span style={{ fontWeight: 700, fontSize: 14, color: '#003087' }}>
-          {category ? category : 'Select a category'}
+          {parentName ? parentName : category ? category : 'Select a category'}
           {selectedSubcategory && <span style={{ color: '#555', fontWeight: 400 }}> / {selectedSubcategory}</span>}
         </span>
-        {category && (
+        {category && !parentName && (
           <button
             onClick={() => { setShowForm(true); setEditIndex(null); setNewBin({ name: '', barcode: '', status: 'in', subcategory: '' }); }}
             style={{
@@ -283,12 +288,12 @@ export default function BinList({ category, selectedSubcategory, onBinsChanged }
                             </div>
                             <div style={{ display: 'flex', alignItems: 'center', gap: 4 }}>
                               <Icon
-                                path={bin.status === 'in' ? mdiCheckCircle : mdiCloseCircle}
+                                path={bin.status === 'in' || bin.status === 'in-pending' ? mdiCheckCircle : mdiCloseCircle}
                                 size={0.65}
-                                color={bin.status === 'in' ? '#2e7d32' : '#cc0000'}
+                                color={bin.status === 'out' || bin.status === 'out-pending' ? '#cc0000' : '#2e7d32'}
                               />
-                              <span style={{ fontSize: 11, color: bin.status === 'in' ? '#2e7d32' : '#cc0000', fontWeight: 600 }}>
-                                {bin.status === 'in' ? 'In Stock' : 'Out'}
+                              <span style={{ fontSize: 11, fontWeight: 600, color: bin.status === 'out' || bin.status === 'out-pending' ? '#cc0000' : '#2e7d32' }}>
+                                {bin.status === 'in' ? 'In Stock' : bin.status === 'out' ? 'Out' : bin.status === 'in-pending' ? 'Storing…' : 'Retrieving…'}
                               </span>
                             </div>
                           </div>
