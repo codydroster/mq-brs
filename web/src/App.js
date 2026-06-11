@@ -14,7 +14,7 @@ function App() {
   const loadCategories = useCallback(() => {
     fetch(`${BASE_URL}/categories`)
       .then(res => res.json())
-      .then(setCategories)
+      .then(data => setCategories(Array.isArray(data) ? data : []))
       .catch(() => setCategories([]));
   }, []);
 

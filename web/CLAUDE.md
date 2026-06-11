@@ -12,7 +12,7 @@ Two separate processes must run concurrently during development:
 
 ```bash
 # Frontend (React, port 3000)
-npm start
+cd web && npm start
 
 # Backend (Express, port 3001)
 cd backend && node server.js
