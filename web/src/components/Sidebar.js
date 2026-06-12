@@ -31,7 +31,7 @@ const S = {
     fontWeight: 700,
     textTransform: 'uppercase',
     letterSpacing: '0.6px',
-    color: '#003087',
+    color: '#1e293b',
   },
   addBtn: {
     background: 'none',
@@ -40,7 +40,7 @@ const S = {
     padding: 2,
     display: 'flex',
     alignItems: 'center',
-    color: '#003087',
+    color: '#1e293b',
   },
   parentRow: {
     display: 'flex',
@@ -66,7 +66,7 @@ const S = {
     fontWeight: 700,
     textTransform: 'uppercase',
     letterSpacing: '0.5px',
-    color: '#003087',
+    color: '#1e293b',
     flex: 1,
   },
   catRow: {
@@ -77,7 +77,7 @@ const S = {
     borderBottom: '1px solid #e4e4e4',
   },
   catRowActive: {
-    backgroundColor: '#003087',
+    backgroundColor: '#1e293b',
   },
   catFolderBtn: {
     background: 'none',
@@ -119,7 +119,7 @@ const S = {
     alignItems: 'center',
     padding: '4px 8px 4px 32px',
     backgroundColor: isSelected ? '#e8f0fb' : 'transparent',
-    borderLeft: isSelected ? '3px solid #003087' : '3px solid transparent',
+    borderLeft: isSelected ? '3px solid #1e293b' : '3px solid transparent',
     cursor: 'pointer',
   }),
   subcatChevronBtn: {
@@ -137,7 +137,7 @@ const S = {
     border: 'none',
     cursor: 'pointer',
     fontSize: 12,
-    color: isSelected ? '#003087' : '#333',
+    color: isSelected ? '#1e293b' : '#333',
     fontWeight: isSelected ? 700 : 400,
     padding: 0,
     textAlign: 'left',
@@ -164,7 +164,7 @@ const S = {
     boxSizing: 'border-box',
   },
   saveBtn: {
-    backgroundColor: '#cc0000',
+    backgroundColor: '#f97316',
     color: '#fff',
     border: 'none',
     padding: '7px 16px',
@@ -363,7 +363,7 @@ const Sidebar = forwardRef(function Sidebar(
             <Icon
               path={isExpanded ? mdiFolderOpen : mdiFolder}
               size={0.75}
-              color={isSelected && !isExpanded ? '#ffffff' : '#003087'}
+              color={isSelected && !isExpanded ? '#ffffff' : '#1e293b'}
             />
           </button>
           <button
@@ -390,7 +390,7 @@ const Sidebar = forwardRef(function Sidebar(
                       <Icon
                         path={isSubExpanded ? mdiChevronDown : mdiChevronRight}
                         size={0.65}
-                        color={isSubSelected ? '#003087' : '#666'}
+                        color={isSubSelected ? '#1e293b' : '#666'}
                       />
                     </button>
                     <button
@@ -428,7 +428,7 @@ const Sidebar = forwardRef(function Sidebar(
       <div style={S.header}>
         <span style={S.headerLabel}>Categories</span>
         <button style={S.addBtn} onClick={() => setShowAddModal(true)} title="Add category">
-          <Icon path={mdiPlus} size={0.8} color="#003087" />
+          <Icon path={mdiPlus} size={0.8} color="#1e293b" />
         </button>
       </div>
 
@@ -436,16 +436,16 @@ const Sidebar = forwardRef(function Sidebar(
         const isParentSelected = selectedParent === parentName;
         return (
           <div key={parentName}>
-            <div style={{ ...S.parentRow, ...(isParentSelected ? { backgroundColor: '#003087' } : {}) }}>
+            <div style={{ ...S.parentRow, ...(isParentSelected ? { backgroundColor: '#1e293b' } : {}) }}>
               <button style={S.parentChevron} onClick={() => toggleParent(parentName)}>
                 <Icon
                   path={expandedParents.has(parentName) ? mdiChevronDown : mdiChevronRight}
                   size={0.65}
-                  color={isParentSelected ? '#ffffff' : '#003087'}
+                  color={isParentSelected ? '#ffffff' : '#1e293b'}
                 />
               </button>
               <span
-                style={{ ...S.parentLabel, color: isParentSelected ? '#ffffff' : '#003087', cursor: 'pointer' }}
+                style={{ ...S.parentLabel, color: isParentSelected ? '#ffffff' : '#1e293b', cursor: 'pointer' }}
                 onClick={() => onSelectParent?.(parentName, grouped[parentName])}
               >
                 {parentName}
@@ -459,7 +459,7 @@ const Sidebar = forwardRef(function Sidebar(
       {/* Add category modal */}
       {showAddModal && (
         <Modal onClose={() => { setShowAddModal(false); setNewCategory(''); setNewParent(''); }}>
-          <h3 style={{ margin: '0 0 12px', fontSize: 14, color: '#003087' }}>Add Category</h3>
+          <h3 style={{ margin: '0 0 12px', fontSize: 14, color: '#1e293b' }}>Add Category</h3>
           <input
             placeholder="Category name"
             value={newCategory}
@@ -482,7 +482,7 @@ const Sidebar = forwardRef(function Sidebar(
       {/* Edit category modal */}
       {editModal?.type === 'category' && (
         <Modal onClose={() => setEditModal(null)}>
-          <h3 style={{ margin: '0 0 12px', fontSize: 14, color: '#003087' }}>Edit Category</h3>
+          <h3 style={{ margin: '0 0 12px', fontSize: 14, color: '#1e293b' }}>Edit Category</h3>
           <input
             placeholder="Category name"
             value={editName}
@@ -505,7 +505,7 @@ const Sidebar = forwardRef(function Sidebar(
       {/* Edit subcategory modal */}
       {editModal?.type === 'subcategory' && (
         <Modal onClose={() => setEditModal(null)}>
-          <h3 style={{ margin: '0 0 12px', fontSize: 14, color: '#003087' }}>Edit Subcategory</h3>
+          <h3 style={{ margin: '0 0 12px', fontSize: 14, color: '#1e293b' }}>Edit Subcategory</h3>
           <input
             placeholder="Subcategory name"
             value={editName}

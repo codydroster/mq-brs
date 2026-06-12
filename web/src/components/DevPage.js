@@ -9,12 +9,12 @@ const TOPICS = {
 const S = {
   page:  { display: 'flex', gap: 24, padding: 24, height: '100%', boxSizing: 'border-box', overflow: 'hidden', fontFamily: 'Arial, Helvetica, sans-serif' },
   panel: { display: 'flex', flexDirection: 'column', flex: 1, gap: 12, minWidth: 0 },
-  title: { margin: 0, fontSize: 13, fontWeight: 700, letterSpacing: 1, color: '#003087', textTransform: 'uppercase', borderBottom: '2px solid #003087', paddingBottom: 6 },
+  title: { margin: 0, fontSize: 13, fontWeight: 700, letterSpacing: 1, color: '#1e293b', textTransform: 'uppercase', borderBottom: '2px solid #1e293b', paddingBottom: 6 },
   log:   { flex: 1, background: '#111', color: '#0f0', fontFamily: 'monospace', fontSize: 12, padding: 10, borderRadius: 4, overflowY: 'auto', whiteSpace: 'pre-wrap', wordBreak: 'break-all' },
   row:   { display: 'flex', gap: 8 },
   input: { flex: 1, fontFamily: 'monospace', fontSize: 13, padding: '6px 10px', border: '1px solid #ccc', borderRadius: 3 },
-  btn:   { background: '#003087', color: '#fff', border: 'none', borderRadius: 3, padding: '6px 14px', fontWeight: 700, fontSize: 13, cursor: 'pointer' },
-  btnRed: { background: '#cc0000' },
+  btn:   { background: '#1e293b', color: '#fff', border: 'none', borderRadius: 3, padding: '6px 14px', fontWeight: 700, fontSize: 13, cursor: 'pointer' },
+  btnRed: { background: '#f97316' },
   dot:   (ok) => ({ display: 'inline-block', width: 8, height: 8, borderRadius: '50%', background: ok ? '#0a0' : '#555', marginRight: 6 }),
 };
 

@@ -54,6 +54,6 @@ Border color and flash animation are driven by `getBinBorderColor` / `getBinAnim
 
 ### Style conventions
 
-- McMaster-Carr-inspired theme: navy `#003087`, red `#cc0000`, Arial font
+- Color theme: charcoal `#1e293b`, orange `#f97316`, Arial font
 - Static style objects are defined at module scope in a `const S = {...}` object in `Sidebar.js`; inline styles are used elsewhere
 - CSS animations for bin flash states are in `src/index.css` (`.flash-red`, `.flash-green`)

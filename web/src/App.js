@@ -8,9 +8,13 @@ import './App.css';
 
 function App() {
   const [categories, setCategories] = useState([]);
-  const [selectedCategory, setSelectedCategory] = useState(null);
-  const [selectedSubcategory, setSelectedSubcategory] = useState(null);
-  const [selectedParent, setSelectedParent] = useState(null); // { name, categories }
+  const [selectedCategory, setSelectedCategory] = useState(() => localStorage.getItem('selectedCategory') || null);
+  const [selectedSubcategory, setSelectedSubcategory] = useState(() => {
+    try { return JSON.parse(localStorage.getItem('selectedSubcategory')) || null; } catch { return null; }
+  });
+  const [selectedParent, setSelectedParent] = useState(() => {
+    try { return JSON.parse(localStorage.getItem('selectedParent')) || null; } catch { return null; }
+  });
   const sidebarRef = useRef();
 
   const loadCategories = useCallback(() => {
@@ -28,11 +32,25 @@ function App() {
     }
   }, [categories, selectedCategory, selectedParent]);
 
-  useEffect(() => { setSelectedSubcategory(null); }, [selectedCategory]);
+  useEffect(() => {
+    if (selectedCategory) localStorage.setItem('selectedCategory', selectedCategory);
+    else localStorage.removeItem('selectedCategory');
+  }, [selectedCategory]);
+
+  useEffect(() => {
+    if (selectedSubcategory) localStorage.setItem('selectedSubcategory', JSON.stringify(selectedSubcategory));
+    else localStorage.removeItem('selectedSubcategory');
+  }, [selectedSubcategory]);
+
+  useEffect(() => {
+    if (selectedParent) localStorage.setItem('selectedParent', JSON.stringify(selectedParent));
+    else localStorage.removeItem('selectedParent');
+  }, [selectedParent]);
 
   const handleSelectCategory = (cat) => {
     setSelectedCategory(cat);
     setSelectedParent(null);
+    setSelectedSubcategory(null);
   };
 
   const handleSelectParent = (parentName, parentCategories) => {

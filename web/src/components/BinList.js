@@ -12,8 +12,8 @@ import Modal from './Modal';
 import { BASE_URL, WS_URL } from '../config';
 
 function getBinBorderColor(bin) {
-  if (bin.status === 'out') return '#cc0000';
-  if (bin.status === 'out-pending') return '#cc0000';
+  if (bin.status === 'out') return '#f97316';
+  if (bin.status === 'out-pending') return '#f97316';
   if (bin.status === 'in-pending') return '#2e7d32';
   return '#c8c8c8';
 }
@@ -174,7 +174,7 @@ export default function BinList({ category, categoryList, parentName, selectedSu
         borderBottom: '1px solid #c8c8c8',
         backgroundColor: '#f4f4f4',
       }}>
-        <span style={{ fontWeight: 700, fontSize: 14, color: '#003087' }}>
+        <span style={{ fontWeight: 700, fontSize: 14, color: '#1e293b' }}>
           {parentName ? parentName : category ? category : 'Select a category'}
           {selectedSubcategory && <span style={{ color: '#555', fontWeight: 400 }}> / {selectedSubcategory}</span>}
         </span>
@@ -185,7 +185,7 @@ export default function BinList({ category, categoryList, parentName, selectedSu
               display: 'flex',
               alignItems: 'center',
               gap: 4,
-              backgroundColor: '#cc0000',
+              backgroundColor: '#f97316',
               color: '#fff',
               border: 'none',
               padding: '5px 12px',
@@ -203,7 +203,7 @@ export default function BinList({ category, categoryList, parentName, selectedSu
       <div style={{ padding: 16 }}>
         {showForm && (
           <Modal onClose={() => { setShowForm(false); setEditIndex(null); }}>
-            <h3 style={{ margin: '0 0 14px', fontSize: 14, color: '#003087' }}>
+            <h3 style={{ margin: '0 0 14px', fontSize: 14, color: '#1e293b' }}>
               {editIndex !== null ? 'Edit Bin' : 'Add Bin'}
             </h3>
             <input placeholder="Name" value={newBin.name} onChange={e => setNewBin({ ...newBin, name: e.target.value })} style={inputStyle} />
@@ -211,7 +211,7 @@ export default function BinList({ category, categoryList, parentName, selectedSu
             <input placeholder="Subcategory" value={newBin.subcategory} onChange={e => setNewBin({ ...newBin, subcategory: e.target.value })} style={{ ...inputStyle, marginBottom: 16 }} />
             <button
               onClick={handleAddOrUpdateBin}
-              style={{ backgroundColor: '#cc0000', color: '#fff', border: 'none', padding: '7px 18px', fontWeight: 700, fontSize: 13, cursor: 'pointer' }}
+              style={{ backgroundColor: '#f97316', color: '#fff', border: 'none', padding: '7px 18px', fontWeight: 700, fontSize: 13, cursor: 'pointer' }}
             >
               {editIndex !== null ? 'Save' : 'Add'}
             </button>
@@ -226,10 +226,10 @@ export default function BinList({ category, categoryList, parentName, selectedSu
                 fontWeight: 700,
                 textTransform: 'uppercase',
                 letterSpacing: '0.7px',
-                color: '#003087',
+                color: '#1e293b',
                 marginBottom: 8,
                 paddingBottom: 4,
-                borderBottom: '2px solid #003087',
+                borderBottom: '2px solid #1e293b',
               }}>
                 {subcat}
               </div>
@@ -273,7 +273,7 @@ export default function BinList({ category, categoryList, parentName, selectedSu
                               </button>
                               <button
                                 onClick={e => { e.stopPropagation(); handleDeleteBin(bins.findIndex(b => b.barcode === bin.barcode)); }}
-                                style={{ background: 'none', border: 'none', cursor: 'pointer', padding: '2px 3px', color: '#cc0000' }}
+                                style={{ background: 'none', border: 'none', cursor: 'pointer', padding: '2px 3px', color: '#f97316' }}
                                 title="Delete"
                               >
                                 <Icon path={mdiTrashCanOutline} size={0.6} />
@@ -290,9 +290,9 @@ export default function BinList({ category, categoryList, parentName, selectedSu
                               <Icon
                                 path={bin.status === 'in' || bin.status === 'in-pending' ? mdiCheckCircle : mdiCloseCircle}
                                 size={0.65}
-                                color={bin.status === 'out' || bin.status === 'out-pending' ? '#cc0000' : '#2e7d32'}
+                                color={bin.status === 'out' || bin.status === 'out-pending' ? '#f97316' : '#2e7d32'}
                               />
-                              <span style={{ fontSize: 11, fontWeight: 600, color: bin.status === 'out' || bin.status === 'out-pending' ? '#cc0000' : '#2e7d32' }}>
+                              <span style={{ fontSize: 11, fontWeight: 600, color: bin.status === 'out' || bin.status === 'out-pending' ? '#f97316' : '#2e7d32' }}>
                                 {bin.status === 'in' ? 'In Stock' : bin.status === 'out' ? 'Out' : bin.status === 'in-pending' ? 'Storing…' : 'Retrieving…'}
                               </span>
                             </div>
