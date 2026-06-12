@@ -1,6 +1,8 @@
 import { useState, useEffect, useCallback, useRef } from 'react';
+import { Routes, Route, NavLink } from 'react-router-dom';
 import Sidebar from './components/Sidebar';
 import BinList from './components/BinList';
+import DevPage from './components/DevPage';
 import { BASE_URL } from './config';
 import './App.css';
 
@@ -48,26 +50,37 @@ function App() {
     <div className="app-shell">
       <div className="app-topbar">
         <h1>BIN <span>ROSTER</span></h1>
+        <nav className="app-nav">
+          <NavLink to="/" end className={({ isActive }) => isActive ? 'nav-link active' : 'nav-link'}>Bins</NavLink>
+          <NavLink to="/dev" className={({ isActive }) => isActive ? 'nav-link active' : 'nav-link'}>Dev</NavLink>
+        </nav>
       </div>
       <div className="app-body">
-        <Sidebar
-          ref={sidebarRef}
-          categories={categories}
-          selectedCategory={selectedCategory}
-          selectedParent={selectedParent?.name}
-          onSelect={handleSelectCategory}
-          onSelectParent={handleSelectParent}
-          reloadCategories={loadCategories}
-          selectedSubcategory={selectedSubcategory}
-          setSelectedSubcategory={setSelectedSubcategory}
-        />
-        <BinList
-          category={selectedCategory}
-          categoryList={selectedParent?.categories}
-          parentName={selectedParent?.name}
-          selectedSubcategory={selectedSubcategory?.subcat}
-          onBinsChanged={handleBinsChanged}
-        />
+        <Routes>
+          <Route path="/" element={
+            <>
+              <Sidebar
+                ref={sidebarRef}
+                categories={categories}
+                selectedCategory={selectedCategory}
+                selectedParent={selectedParent?.name}
+                onSelect={handleSelectCategory}
+                onSelectParent={handleSelectParent}
+                reloadCategories={loadCategories}
+                selectedSubcategory={selectedSubcategory}
+                setSelectedSubcategory={setSelectedSubcategory}
+              />
+              <BinList
+                category={selectedCategory}
+                categoryList={selectedParent?.categories}
+                parentName={selectedParent?.name}
+                selectedSubcategory={selectedSubcategory?.subcat}
+                onBinsChanged={handleBinsChanged}
+              />
+            </>
+          } />
+          <Route path="/dev" element={<DevPage />} />
+        </Routes>
       </div>
     </div>
   );
