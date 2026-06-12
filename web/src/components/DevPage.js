@@ -7,15 +7,15 @@ const TOPICS = {
 };
 
 const S = {
-  page:  { display: 'flex', gap: 24, padding: 24, height: '100%', boxSizing: 'border-box', overflow: 'hidden', fontFamily: 'Arial, Helvetica, sans-serif' },
-  panel: { display: 'flex', flexDirection: 'column', flex: 1, gap: 12, minWidth: 0 },
-  title: { margin: 0, fontSize: 13, fontWeight: 700, letterSpacing: 1, color: '#1e293b', textTransform: 'uppercase', borderBottom: '2px solid #1e293b', paddingBottom: 6 },
-  log:   { flex: 1, background: '#111', color: '#0f0', fontFamily: 'monospace', fontSize: 12, padding: 10, borderRadius: 4, overflowY: 'auto', whiteSpace: 'pre-wrap', wordBreak: 'break-all' },
+  page:  { display: 'flex', gap: 20, padding: 20, height: '100%', boxSizing: 'border-box', overflow: 'hidden', fontFamily: 'var(--font-body)', background: 'var(--bg)' },
+  panel: { display: 'flex', flexDirection: 'column', flex: 1, gap: 12, minWidth: 0, background: 'var(--panel)', border: '1px solid var(--line)', borderTop: '3px solid var(--accent)', borderRadius: 8, padding: 14 },
+  title: { margin: 0, display: 'flex', alignItems: 'center', fontFamily: 'var(--font-display)', fontSize: 16, fontWeight: 700, letterSpacing: '1.5px', color: 'var(--text)', textTransform: 'uppercase', borderBottom: '1px solid var(--line)', paddingBottom: 8 },
+  log:   { flex: 1, background: '#1d232c', color: '#9aa5b1', fontFamily: 'var(--font-mono)', fontSize: 12, padding: 12, border: '1px solid var(--line)', borderRadius: 8, overflowY: 'auto', whiteSpace: 'pre-wrap', wordBreak: 'break-all' },
   row:   { display: 'flex', gap: 8 },
-  input: { flex: 1, fontFamily: 'monospace', fontSize: 13, padding: '6px 10px', border: '1px solid #ccc', borderRadius: 3 },
-  btn:   { background: '#1e293b', color: '#fff', border: 'none', borderRadius: 3, padding: '6px 14px', fontWeight: 700, fontSize: 13, cursor: 'pointer' },
-  btnRed: { background: '#f97316' },
-  dot:   (ok) => ({ display: 'inline-block', width: 8, height: 8, borderRadius: '50%', background: ok ? '#0a0' : '#555', marginRight: 6 }),
+  input: { flex: 1, fontFamily: 'var(--font-mono)', fontSize: 13, padding: '7px 10px', border: '1px solid var(--line)', background: 'var(--bg)', color: 'var(--text)', borderRadius: 8, outline: 'none' },
+  btn:   { background: 'var(--accent)', color: '#ffffff', border: 'none', borderRadius: 8, padding: '7px 16px', fontFamily: 'var(--font-display)', fontWeight: 700, fontSize: 14, letterSpacing: '1px', textTransform: 'uppercase', cursor: 'pointer' },
+  btnRed: { background: 'transparent', color: 'var(--text-dim)', border: '1px solid var(--line)' },
+  dot:   (ok) => ({ display: 'inline-block', width: 8, height: 8, borderRadius: '50%', background: ok ? 'var(--green)' : 'var(--text-faint)', boxShadow: ok ? '0 0 5px rgba(29,158,82,0.6)' : 'none', marginRight: 8 }),
 };
 
 function useDevWS(onMessage) {

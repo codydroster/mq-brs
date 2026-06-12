@@ -2,8 +2,6 @@ import { useEffect, useState, useRef } from 'react';
 import Icon from '@mdi/react';
 import {
   mdiPlus,
-  mdiCheckCircle,
-  mdiCloseCircle,
   mdiPencilOutline,
   mdiTrashCanOutline,
 } from '@mdi/js';
@@ -12,10 +10,17 @@ import Modal from './Modal';
 import { BASE_URL, WS_URL } from '../config';
 
 function getBinBorderColor(bin) {
-  if (bin.status === 'out') return '#f97316';
-  if (bin.status === 'out-pending') return '#f97316';
-  if (bin.status === 'in-pending') return '#2e7d32';
-  return '#c8c8c8';
+  if (bin.status === 'out') return 'var(--red)';
+  if (bin.status === 'out-pending') return 'var(--red)';
+  if (bin.status === 'in-pending') return 'var(--green)';
+  return 'var(--line)';
+}
+
+function getBinStatus(bin) {
+  if (bin.status === 'in') return { label: 'IN STOCK', led: 'led-green', color: 'var(--green)' };
+  if (bin.status === 'out') return { label: 'OUT', led: 'led-red', color: 'var(--red)' };
+  if (bin.status === 'in-pending') return { label: 'STORING…', led: 'led-green', color: 'var(--green)' };
+  return { label: 'RETRIEVING…', led: 'led-red', color: 'var(--red)' };
 }
 
 function getBinAnimationClass(bin) {
@@ -45,10 +50,12 @@ async function putCategory(category, bins) {
 const inputStyle = {
   width: '100%',
   marginBottom: 10,
-  padding: '6px 8px',
-  border: '1px solid #c8c8c8',
+  padding: '7px 10px',
+  border: '1px solid var(--line)',
+  background: 'var(--bg)',
+  color: 'var(--text)',
   fontSize: 13,
-  fontFamily: 'Arial, Helvetica, sans-serif',
+  borderRadius: 8,
   outline: 'none',
 };
 
@@ -57,7 +64,21 @@ export default function BinList({ category, categoryList, parentName, selectedSu
   const [showForm, setShowForm] = useState(false);
   const [editIndex, setEditIndex] = useState(null);
   const [newBin, setNewBin] = useState({ name: '', barcode: '', status: 'in', subcategory: '', request: 'no' });
+  // Barcodes with a retrieve request sent but not yet acknowledged by the vehicle
+  const [requested, setRequested] = useState(new Set());
+  const requestTimers = useRef({});
   const clientRef = useRef(null);
+
+  const clearRequested = (barcode) => {
+    setRequested(prev => {
+      if (!prev.has(barcode)) return prev;
+      const next = new Set(prev);
+      next.delete(barcode);
+      return next;
+    });
+    clearTimeout(requestTimers.current[barcode]);
+    delete requestTimers.current[barcode];
+  };
 
   // Single category
   useEffect(() => {
@@ -84,23 +105,33 @@ export default function BinList({ category, categoryList, parentName, selectedSu
     ws.onmessage = (event) => {
       try {
         const { barcode, status } = JSON.parse(event.data);
+        clearRequested(barcode); // vehicle acknowledged
         setBins(prev => prev.map(bin =>
           bin.barcode === barcode ? { ...bin, status } : bin
         ));
       } catch (e) { console.error('[WS] message parse error', e); }
     };
     clientRef.current = ws;
-    return () => ws.close();
+    const timers = requestTimers.current;
+    return () => {
+      ws.close();
+      Object.values(timers).forEach(clearTimeout);
+    };
   }, []);
 
   const handleBinClick = (barcode) => {
+    if (requested.has(barcode)) return; // already awaiting acknowledgement
     if (!window.confirm('Retrieve bin?')) return;
     const ws = clientRef.current;
     if (ws?.readyState === WebSocket.OPEN) {
       const msg = JSON.stringify({ topic: 'bins/command', payload: { barcode, type: 'retrieve' } });
       console.log('[WS] sending', msg);
       ws.send(msg);
-      setBins(prev => prev.map(bin => bin.barcode === barcode ? { ...bin, status: 'out-pending' } : bin));
+      // Status itself is not updated optimistically (see MQTT_MESSAGES.md) — we only
+      // mark the request as awaiting acknowledgement, cleared by the next bins/update
+      setRequested(prev => new Set(prev).add(barcode));
+      clearTimeout(requestTimers.current[barcode]);
+      requestTimers.current[barcode] = setTimeout(() => clearRequested(barcode), 15000);
     } else {
       console.error('[WS] not open, readyState:', ws?.readyState);
     }
@@ -164,19 +195,26 @@ export default function BinList({ category, categoryList, parentName, selectedSu
     : grouped;
 
   return (
-    <div style={{ flex: 1, overflowY: 'auto', backgroundColor: '#ffffff' }}>
+    <div style={{ flex: 1, overflowY: 'auto', backgroundColor: 'var(--bg)' }}>
       {/* Content header bar */}
       <div style={{
         display: 'flex',
         alignItems: 'center',
         justifyContent: 'space-between',
-        padding: '8px 16px',
-        borderBottom: '1px solid #c8c8c8',
-        backgroundColor: '#f4f4f4',
+        padding: '10px 18px',
+        borderBottom: '1px solid var(--line)',
+        backgroundColor: 'var(--panel)',
       }}>
-        <span style={{ fontWeight: 700, fontSize: 14, color: '#1e293b' }}>
+        <span style={{
+          fontFamily: 'var(--font-display)',
+          fontWeight: 700,
+          fontSize: 18,
+          letterSpacing: '1.5px',
+          textTransform: 'uppercase',
+          color: 'var(--text)',
+        }}>
           {parentName ? parentName : category ? category : 'Select a category'}
-          {selectedSubcategory && <span style={{ color: '#555', fontWeight: 400 }}> / {selectedSubcategory}</span>}
+          {selectedSubcategory && <span style={{ color: 'var(--text-faint)', fontWeight: 600 }}> / {selectedSubcategory}</span>}
         </span>
         {category && !parentName && (
           <button
@@ -185,17 +223,20 @@ export default function BinList({ category, categoryList, parentName, selectedSu
               display: 'flex',
               alignItems: 'center',
               gap: 4,
-              backgroundColor: '#f97316',
-              color: '#fff',
+              backgroundColor: 'var(--accent)',
+              color: '#ffffff',
               border: 'none',
-              padding: '5px 12px',
+              padding: '6px 14px',
+              fontFamily: 'var(--font-display)',
               fontWeight: 700,
-              fontSize: 12,
+              fontSize: 14,
+              textTransform: 'uppercase',
               cursor: 'pointer',
-              letterSpacing: '0.3px',
+              letterSpacing: '1px',
+              borderRadius: 8,
             }}
           >
-            <Icon path={mdiPlus} size={0.7} color="#fff" /> Add Bin
+            <Icon path={mdiPlus} size={0.7} color="#ffffff" /> Add Bin
           </button>
         )}
       </div>
@@ -203,7 +244,7 @@ export default function BinList({ category, categoryList, parentName, selectedSu
       <div style={{ padding: 16 }}>
         {showForm && (
           <Modal onClose={() => { setShowForm(false); setEditIndex(null); }}>
-            <h3 style={{ margin: '0 0 14px', fontSize: 14, color: '#1e293b' }}>
+            <h3 style={{ margin: '0 0 14px', fontFamily: 'var(--font-display)', fontSize: 17, letterSpacing: '1px', textTransform: 'uppercase', color: 'var(--text)' }}>
               {editIndex !== null ? 'Edit Bin' : 'Add Bin'}
             </h3>
             <input placeholder="Name" value={newBin.name} onChange={e => setNewBin({ ...newBin, name: e.target.value })} style={inputStyle} />
@@ -211,7 +252,7 @@ export default function BinList({ category, categoryList, parentName, selectedSu
             <input placeholder="Subcategory" value={newBin.subcategory} onChange={e => setNewBin({ ...newBin, subcategory: e.target.value })} style={{ ...inputStyle, marginBottom: 16 }} />
             <button
               onClick={handleAddOrUpdateBin}
-              style={{ backgroundColor: '#f97316', color: '#fff', border: 'none', padding: '7px 18px', fontWeight: 700, fontSize: 13, cursor: 'pointer' }}
+              style={{ backgroundColor: 'var(--accent)', color: '#ffffff', border: 'none', padding: '8px 20px', fontFamily: 'var(--font-display)', fontWeight: 700, fontSize: 14, letterSpacing: '1px', textTransform: 'uppercase', cursor: 'pointer', borderRadius: 8 }}
             >
               {editIndex !== null ? 'Save' : 'Add'}
             </button>
@@ -222,16 +263,22 @@ export default function BinList({ category, categoryList, parentName, selectedSu
           {Object.entries(visibleGroups).map(([subcat, list]) => (
             <div key={subcat} style={{ marginBottom: 28 }}>
               <div style={{
+                display: 'flex',
+                alignItems: 'center',
+                gap: 8,
+                fontFamily: 'var(--font-mono)',
                 fontSize: 11,
-                fontWeight: 700,
+                fontWeight: 600,
                 textTransform: 'uppercase',
-                letterSpacing: '0.7px',
-                color: '#1e293b',
-                marginBottom: 8,
-                paddingBottom: 4,
-                borderBottom: '2px solid #1e293b',
+                letterSpacing: '2px',
+                color: 'var(--text-dim)',
+                marginBottom: 10,
+                paddingBottom: 5,
+                borderBottom: '1px solid var(--line)',
               }}>
+                <span style={{ width: 10, height: 10, background: 'var(--accent)', flexShrink: 0 }} />
                 {subcat}
+                <span style={{ marginLeft: 'auto', color: 'var(--text-faint)', letterSpacing: '1px' }}>{list.length.toString().padStart(2, '0')}</span>
               </div>
               <Droppable droppableId={subcat} direction="horizontal">
                 {(provided) => (
@@ -247,54 +294,66 @@ export default function BinList({ category, categoryList, parentName, selectedSu
                             ref={provided.innerRef}
                             {...provided.draggableProps}
                             {...provided.dragHandleProps}
-                            className={getBinAnimationClass(bin)}
+                            className={requested.has(bin.barcode) ? 'bin-requested' : getBinAnimationClass(bin)}
                             onClick={() => handleBinClick(bin.barcode)}
                             style={{
-                              width: 148,
-                              padding: '10px 10px 8px',
-                              borderRadius: 2,
-                              backgroundColor: '#ffffff',
-                              border: `2px solid ${getBinBorderColor(bin)}`,
+                              width: 152,
+                              padding: '10px 12px 9px',
+                              borderRadius: 8,
+                              backgroundColor: 'var(--raised)',
+                              border: requested.has(bin.barcode)
+                                ? '1px dashed var(--accent)'
+                                : `1px solid ${getBinBorderColor(bin)}`,
+                              borderTop: requested.has(bin.barcode)
+                                ? '3px dashed var(--accent)'
+                                : `3px solid ${getBinBorderColor(bin)}`,
                               fontSize: 12,
-                              boxShadow: '0 1px 3px rgba(0,0,0,0.08)',
+                              boxShadow: '0 2px 6px rgba(0,0,0,0.35)',
                               position: 'relative',
                               userSelect: 'none',
                               cursor: 'pointer',
                               ...provided.draggableProps.style,
                             }}
                           >
-                            <div style={{ position: 'absolute', top: 4, right: 2, display: 'flex' }}>
+                            <div style={{ position: 'absolute', top: 5, right: 4, display: 'flex' }}>
                               <button
                                 onClick={e => { e.stopPropagation(); handleEditBin(bins.findIndex(b => b.barcode === bin.barcode)); }}
-                                style={{ background: 'none', border: 'none', cursor: 'pointer', padding: '2px 3px', color: '#666' }}
+                                style={{ background: 'none', border: 'none', cursor: 'pointer', padding: '2px 3px', color: 'var(--text-faint)' }}
                                 title="Edit"
                               >
                                 <Icon path={mdiPencilOutline} size={0.6} />
                               </button>
                               <button
                                 onClick={e => { e.stopPropagation(); handleDeleteBin(bins.findIndex(b => b.barcode === bin.barcode)); }}
-                                style={{ background: 'none', border: 'none', cursor: 'pointer', padding: '2px 3px', color: '#f97316' }}
+                                style={{ background: 'none', border: 'none', cursor: 'pointer', padding: '2px 3px', color: 'var(--red)' }}
                                 title="Delete"
                               >
                                 <Icon path={mdiTrashCanOutline} size={0.6} />
                               </button>
                             </div>
 
-                            <div style={{ fontWeight: 700, fontSize: 13, marginBottom: 2, paddingRight: 36, color: '#1a1a1a' }}>
+                            <div style={{ fontWeight: 600, fontSize: 13, marginBottom: 3, paddingRight: 36, color: 'var(--text)' }}>
                               {bin.name}
                             </div>
-                            <div style={{ color: '#777', fontSize: 11, marginBottom: 6, fontFamily: 'Courier New, monospace' }}>
+                            <div style={{ color: 'var(--text-faint)', fontSize: 10, marginBottom: 8, fontFamily: 'var(--font-mono)', letterSpacing: '0.5px' }}>
                               {bin.barcode}
                             </div>
-                            <div style={{ display: 'flex', alignItems: 'center', gap: 4 }}>
-                              <Icon
-                                path={bin.status === 'in' || bin.status === 'in-pending' ? mdiCheckCircle : mdiCloseCircle}
-                                size={0.65}
-                                color={bin.status === 'out' || bin.status === 'out-pending' ? '#f97316' : '#2e7d32'}
-                              />
-                              <span style={{ fontSize: 11, fontWeight: 600, color: bin.status === 'out' || bin.status === 'out-pending' ? '#f97316' : '#2e7d32' }}>
-                                {bin.status === 'in' ? 'In Stock' : bin.status === 'out' ? 'Out' : bin.status === 'in-pending' ? 'Storing…' : 'Retrieving…'}
-                              </span>
+                            <div style={{ display: 'flex', alignItems: 'center', gap: 6 }}>
+                              {requested.has(bin.barcode) ? (
+                                <>
+                                  <span className="led led-accent" />
+                                  <span style={{ fontFamily: 'var(--font-mono)', fontSize: 10, fontWeight: 600, letterSpacing: '1px', color: 'var(--accent)' }}>
+                                    REQUESTED…
+                                  </span>
+                                </>
+                              ) : (
+                                <>
+                                  <span className={`led ${getBinStatus(bin).led}`} />
+                                  <span style={{ fontFamily: 'var(--font-mono)', fontSize: 10, fontWeight: 600, letterSpacing: '1px', color: getBinStatus(bin).color }}>
+                                    {getBinStatus(bin).label}
+                                  </span>
+                                </>
+                              )}
                             </div>
                           </div>
                         )}

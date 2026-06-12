@@ -47,13 +47,23 @@ def find_bin(barcode):
 
 
 def find_empty_slot():
-    """Return (row, col, slot) for the first empty slot, or None if full."""
+    """
+    Return (row, col, slot) for the first physically insertable slot, or None if full.
+
+    Slots are back-to-front (1 = back, 3 = front) and bins are inserted from the
+    front, so the only insertable slot at a position is the one directly in front
+    of the frontmost occupied slot (or slot 1 if the position is empty). A deeper
+    empty slot behind an occupied one is unreachable.
+    """
     grid = _load()
     for r in range(1, ROWS+1):
         for c in range(1, COLS+1):
+            deepest_occupied = 0
             for s in range(1, SLOTS+1):
-                if grid.get(f"{r},{c},{s}") is None:
-                    return (r, c, s)
+                if grid.get(f"{r},{c},{s}") is not None:
+                    deepest_occupied = s
+            if deepest_occupied < SLOTS:
+                return (r, c, deepest_occupied + 1)
     return None
 
 

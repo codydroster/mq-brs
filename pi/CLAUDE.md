@@ -6,20 +6,21 @@ Python script that receives MQTT commands from the web app and controls the phys
 
 ```bash
 pip install -r requirements.txt
-python machine.py
+cp password.example.json password.json   # then fill in MQTT credentials (gitignored)
+python GRBL.py            # normal operation
+python GRBL.py --debug    # interactive shell: move/alignx/aligny/gcode/grid/retrieve/store
 ```
 
 ## Hardware
 
 ```
-Pi (machine.py)
-  ├── Serial (UART /dev/ttyAMA0) → carpark1 Arduino → car1 (retrieval mechanism)
-  ├── Serial (USB  /dev/ttyACM0) → CNC XY system (GRBL) → positions car1
-  └── GPIO22, GPIO23             → alignment sensors (travel with XY carriage)
+Pi (GRBL.py)
+  ├── Serial (USB /dev/ttyACM0) → CNC XY system (GRBL) → positions car1
+  └── GPIO22, GPIO23            → alignment sensors (travel with XY carriage)
 ```
 
+- **GRBL.py is solely the CNC controller** — it does not talk to the carpark1 Arduino. The carpark1/car1 serial link (UART) will be handled separately; the TODO markers in `handle_retrieve`/`handle_store` show where that integration plugs in.
 - **CNC XY (GRBL)** moves car1 to the correct bin location
-- **carpark1** controls car1's motors to physically retrieve or store a bin
 - **GPIO23 / GPIO22** are two sensors mounted on the carriage, exactly 60mm apart, used to detect slot markers and confirm exact alignment
 
 ## Grid layout
@@ -36,9 +37,9 @@ Pi (machine.py)
 
 After the CNC moves to the approximate grid position, an alignment scan finds the exact slot location:
 
-1. **Phase 1** — carriage moves right `SLOT_SPACING_X / 2` (57.5mm) at slow feed rate. Only GPIO23 is polled. When GPIO23 triggers, send `?` to GRBL to record position `pos23`.
+1. **Phase 1** — carriage moves right `SLOT_WIDTH / 2` (40mm) at slow feed rate. Only GPIO23 is polled. When GPIO23 triggers, send `?` to GRBL to record position `pos23`.
 
-2. **Phase 2** — carriage moves right another `SLOT_SPACING_X / 4` (28.75mm). Only GPIO22 is polled (GPIO22 is ignored during phase 1 to avoid false reads from obstacles in the way). When GPIO22 triggers, record position `pos22`.
+2. **Phase 2** — carriage moves right another `SLOT_WIDTH / 3` (~26.7mm). Only GPIO22 is polled (GPIO22 is ignored during phase 1 to avoid false reads from obstacles in the way). When GPIO22 triggers, record position `pos22`.
 
 3. **Average** — since both sensors detect the same slot marker and are 60mm apart, the true marker position is estimated as:
    ```
@@ -46,7 +47,9 @@ After the CNC moves to the approximate grid position, an alignment scan finds th
    ```
    Falls back to a single sensor reading if the other didn't trigger.
 
-4. **Center** — carriage moves to `confirmed_x + ALIGN_CENTER_OFFSET` to sit centered on the slot. `ALIGN_CENTER_OFFSET` is currently 20mm — tune after calibration.
+4. **Center X** — carriage moves to `confirmed_x + ALIGN_CENTER_OFFSET` to sit centered on the slot. `ALIGN_CENTER_OFFSET` is currently 20mm — tune after calibration.
+
+5. **Align Y** — after X is centered, travel Y positive (up to `SLOT_SPACING_Y / 2`) polling both sensors. They sit on the same plane, so they trigger at roughly the same time; the two trigger positions are averaged directly (no spacing offset). Then travel positive another `ALIGN_CENTER_OFFSET_Y` (20mm, tune after calibration).
 
 ## MQTT topics
 

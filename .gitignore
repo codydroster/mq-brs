@@ -5,5 +5,7 @@ build/
 .env.*.local
 .DS_Store
 .claude/settings.local.json
-backend/bins/
+web/backend/bins/
 pi/locations.json
+pi/password.json
+__pycache__/

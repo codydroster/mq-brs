@@ -8,10 +8,10 @@ const DEFAULT_PARENT = 'General';
 
 const S = {
   sidebar: {
-    width: 200,
-    minWidth: 200,
-    backgroundColor: '#f4f4f4',
-    borderRight: '1px solid #c8c8c8',
+    width: 210,
+    minWidth: 210,
+    backgroundColor: 'var(--panel)',
+    borderRight: '1px solid var(--line)',
     height: '100%',
     boxSizing: 'border-box',
     overflowY: 'auto',
@@ -22,16 +22,17 @@ const S = {
     display: 'flex',
     justifyContent: 'space-between',
     alignItems: 'center',
-    padding: '8px 10px',
-    borderBottom: '1px solid #c8c8c8',
-    backgroundColor: '#e8e8e8',
+    padding: '10px 12px',
+    borderBottom: '1px solid var(--line)',
+    backgroundColor: 'var(--panel)',
   },
   headerLabel: {
-    fontSize: 11,
-    fontWeight: 700,
+    fontFamily: 'var(--font-mono)',
+    fontSize: 10,
+    fontWeight: 600,
     textTransform: 'uppercase',
-    letterSpacing: '0.6px',
-    color: '#1e293b',
+    letterSpacing: '1.5px',
+    color: 'var(--text-faint)',
   },
   addBtn: {
     background: 'none',
@@ -40,16 +41,16 @@ const S = {
     padding: 2,
     display: 'flex',
     alignItems: 'center',
-    color: '#1e293b',
+    color: 'var(--accent)',
   },
   parentRow: {
     display: 'flex',
     alignItems: 'center',
-    padding: '4px 8px',
+    padding: '6px 10px',
     cursor: 'pointer',
-    backgroundColor: '#e0e0e0',
-    borderBottom: '1px solid #c8c8c8',
-    borderTop: '1px solid #c8c8c8',
+    backgroundColor: 'var(--raised)',
+    borderBottom: '1px solid var(--line-soft)',
+    borderTop: '1px solid var(--line-soft)',
   },
   parentChevron: {
     background: 'none',
@@ -62,11 +63,12 @@ const S = {
     flexShrink: 0,
   },
   parentLabel: {
-    fontSize: 11,
+    fontFamily: 'var(--font-display)',
+    fontSize: 14,
     fontWeight: 700,
     textTransform: 'uppercase',
-    letterSpacing: '0.5px',
-    color: '#1e293b',
+    letterSpacing: '1px',
+    color: 'var(--text-dim)',
     flex: 1,
   },
   catRow: {
@@ -74,10 +76,12 @@ const S = {
     alignItems: 'center',
     padding: '5px 8px 5px 16px',
     cursor: 'pointer',
-    borderBottom: '1px solid #e4e4e4',
+    borderBottom: '1px solid var(--line-soft)',
+    borderLeft: '3px solid transparent',
   },
   catRowActive: {
-    backgroundColor: '#1e293b',
+    backgroundColor: 'var(--raised)',
+    borderLeft: '3px solid var(--accent)',
   },
   catFolderBtn: {
     background: 'none',
@@ -93,9 +97,10 @@ const S = {
     background: 'none',
     border: 'none',
     cursor: 'pointer',
-    fontWeight: 600,
+    fontWeight: isSelected ? 600 : 500,
     fontSize: 13,
-    color: isSelected ? '#ffffff' : '#1a1a1a',
+    fontFamily: 'var(--font-body)',
+    color: isSelected ? 'var(--accent)' : 'var(--text)',
     padding: 0,
     textAlign: 'left',
     flex: 1,
@@ -107,19 +112,19 @@ const S = {
     padding: '1px 2px',
     display: 'flex',
     alignItems: 'center',
-    color: isSelected ? 'rgba(255,255,255,0.7)' : '#999',
+    color: isSelected ? 'var(--accent-dim)' : 'var(--text-faint)',
     flexShrink: 0,
   }),
   subcatSection: {
-    backgroundColor: '#ffffff',
-    borderBottom: '1px solid #e4e4e4',
+    backgroundColor: 'var(--bg)',
+    borderBottom: '1px solid var(--line-soft)',
   },
   subcatRow: (isSelected) => ({
     display: 'flex',
     alignItems: 'center',
     padding: '4px 8px 4px 32px',
-    backgroundColor: isSelected ? '#e8f0fb' : 'transparent',
-    borderLeft: isSelected ? '3px solid #1e293b' : '3px solid transparent',
+    backgroundColor: isSelected ? 'var(--raised)' : 'transparent',
+    borderLeft: isSelected ? '3px solid var(--accent)' : '3px solid transparent',
     cursor: 'pointer',
   }),
   subcatChevronBtn: {
@@ -137,40 +142,50 @@ const S = {
     border: 'none',
     cursor: 'pointer',
     fontSize: 12,
-    color: isSelected ? '#1e293b' : '#333',
-    fontWeight: isSelected ? 700 : 400,
+    fontFamily: 'var(--font-body)',
+    color: isSelected ? 'var(--accent)' : 'var(--text-dim)',
+    fontWeight: isSelected ? 600 : 400,
     padding: 0,
     textAlign: 'left',
     flex: 1,
   }),
   binItem: {
-    fontSize: 11,
-    color: '#555',
+    fontFamily: 'var(--font-mono)',
+    fontSize: 10,
+    color: 'var(--text-faint)',
     padding: '2px 8px 2px 54px',
     cursor: 'pointer',
   },
   emptyMsg: {
     fontSize: 11,
-    color: '#999',
+    color: 'var(--text-faint)',
     padding: '4px 8px 4px 32px',
     fontStyle: 'italic',
   },
   inputStyle: {
     width: '100%',
     marginBottom: 10,
-    padding: '6px 8px',
-    border: '1px solid #c8c8c8',
+    padding: '7px 10px',
+    border: '1px solid var(--line)',
+    background: 'var(--bg)',
+    color: 'var(--text)',
     fontSize: 13,
     boxSizing: 'border-box',
+    borderRadius: 8,
+    outline: 'none',
   },
   saveBtn: {
-    backgroundColor: '#f97316',
-    color: '#fff',
+    backgroundColor: 'var(--accent)',
+    color: '#ffffff',
     border: 'none',
-    padding: '7px 16px',
+    padding: '8px 18px',
+    fontFamily: 'var(--font-display)',
     fontWeight: 700,
-    fontSize: 13,
+    fontSize: 14,
+    letterSpacing: '1px',
+    textTransform: 'uppercase',
     cursor: 'pointer',
+    borderRadius: 8,
   },
 };
 
@@ -363,7 +378,7 @@ const Sidebar = forwardRef(function Sidebar(
             <Icon
               path={isExpanded ? mdiFolderOpen : mdiFolder}
               size={0.75}
-              color={isSelected && !isExpanded ? '#ffffff' : '#1e293b'}
+              color={isSelected ? 'var(--accent)' : 'var(--text-faint)'}
             />
           </button>
           <button
@@ -390,7 +405,7 @@ const Sidebar = forwardRef(function Sidebar(
                       <Icon
                         path={isSubExpanded ? mdiChevronDown : mdiChevronRight}
                         size={0.65}
-                        color={isSubSelected ? '#1e293b' : '#666'}
+                        color={isSubSelected ? 'var(--accent)' : 'var(--text-faint)'}
                       />
                     </button>
                     <button
@@ -428,7 +443,7 @@ const Sidebar = forwardRef(function Sidebar(
       <div style={S.header}>
         <span style={S.headerLabel}>Categories</span>
         <button style={S.addBtn} onClick={() => setShowAddModal(true)} title="Add category">
-          <Icon path={mdiPlus} size={0.8} color="#1e293b" />
+          <Icon path={mdiPlus} size={0.8} color="var(--accent)" />
         </button>
       </div>
 
@@ -436,16 +451,16 @@ const Sidebar = forwardRef(function Sidebar(
         const isParentSelected = selectedParent === parentName;
         return (
           <div key={parentName}>
-            <div style={{ ...S.parentRow, ...(isParentSelected ? { backgroundColor: '#1e293b' } : {}) }}>
+            <div style={{ ...S.parentRow, ...(isParentSelected ? { borderLeft: '3px solid var(--accent)' } : { borderLeft: '3px solid transparent' }) }}>
               <button style={S.parentChevron} onClick={() => toggleParent(parentName)}>
                 <Icon
                   path={expandedParents.has(parentName) ? mdiChevronDown : mdiChevronRight}
                   size={0.65}
-                  color={isParentSelected ? '#ffffff' : '#1e293b'}
+                  color={isParentSelected ? 'var(--accent)' : 'var(--text-faint)'}
                 />
               </button>
               <span
-                style={{ ...S.parentLabel, color: isParentSelected ? '#ffffff' : '#1e293b', cursor: 'pointer' }}
+                style={{ ...S.parentLabel, color: isParentSelected ? 'var(--accent)' : 'var(--text-dim)', cursor: 'pointer' }}
                 onClick={() => onSelectParent?.(parentName, grouped[parentName])}
               >
                 {parentName}
@@ -459,7 +474,7 @@ const Sidebar = forwardRef(function Sidebar(
       {/* Add category modal */}
       {showAddModal && (
         <Modal onClose={() => { setShowAddModal(false); setNewCategory(''); setNewParent(''); }}>
-          <h3 style={{ margin: '0 0 12px', fontSize: 14, color: '#1e293b' }}>Add Category</h3>
+          <h3 style={{ margin: '0 0 12px', fontSize: 14, color: 'var(--text)' }}>ADD CATEGORY</h3>
           <input
             placeholder="Category name"
             value={newCategory}
@@ -482,7 +497,7 @@ const Sidebar = forwardRef(function Sidebar(
       {/* Edit category modal */}
       {editModal?.type === 'category' && (
         <Modal onClose={() => setEditModal(null)}>
-          <h3 style={{ margin: '0 0 12px', fontSize: 14, color: '#1e293b' }}>Edit Category</h3>
+          <h3 style={{ margin: '0 0 12px', fontSize: 14, color: 'var(--text)' }}>EDIT CATEGORY</h3>
           <input
             placeholder="Category name"
             value={editName}
@@ -505,7 +520,7 @@ const Sidebar = forwardRef(function Sidebar(
       {/* Edit subcategory modal */}
       {editModal?.type === 'subcategory' && (
         <Modal onClose={() => setEditModal(null)}>
-          <h3 style={{ margin: '0 0 12px', fontSize: 14, color: '#1e293b' }}>Edit Subcategory</h3>
+          <h3 style={{ margin: '0 0 12px', fontSize: 14, color: 'var(--text)' }}>EDIT SUBCATEGORY</h3>
           <input
             placeholder="Subcategory name"
             value={editName}
